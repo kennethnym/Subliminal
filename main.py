@@ -10,6 +10,6 @@ __all__ = ["ExampleCommand", "PubGetCommand", "FlutterCleanCommand"]
 
 
 class SublimeEventListener(sublime_plugin.EventListener):
-	def on_load_async(self, view):
-		window = view.window()
-		load_project(window)
+    def on_load_async(self, view):
+        window = view.window()
+        load_project(window)
