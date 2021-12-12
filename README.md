@@ -1,4 +1,4 @@
-# Subliminal
+# Subliminal [Work in progress!]
 
 A Sublime Text 3/4 plugin that adds support for Dart/Flutter projects. This plugin adds commands for working with Dart/Flutter projects,
 and **does not** provide syntax/autocompletion support.
@@ -11,3 +11,12 @@ and **does not** provide syntax/autocompletion support.
     - `DART_SDK` should be the path to the Dart SDK
     - If you have per-project settings, define them in the project settings file instead.
 3. Install this plugin through Package Control.
+
+## To-do
+
+- [ ] Dart/Flutter commands
+    - [x] `pub get`
+    - [x] `fluter clean`
+- [ ] Open ios/android folder in Xcode/Android Studio
+- [ ] Select device
+- [ ] Add dependency
