@@ -1,0 +1,5 @@
+[
+	{ "caption": "Flutter: Run", "command": "flutter_run" },
+	{ "caption": "Flutter: Clean", "command": "flutter_clean" },
+	{ "caption": "Pub get", "command": "pub_get" }
+]
