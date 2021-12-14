@@ -19,4 +19,4 @@ class PackageNameInputHandler(sublime_plugin.TextInputHandler):
         return "package_name"
 
     def placeholder(self):
-        return "Package name (package_name / package_name@x.y.z)"
+        return "package_name[:@x.y.z]"
