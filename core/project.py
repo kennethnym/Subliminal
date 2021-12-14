@@ -1,20 +1,18 @@
 import os.path
-import subprocess
 import yaml
 from threading import Thread
-from subprocess import Popen
 from yaml.error import YAMLError
 
 from .panel import create_output_panel, show_output_panel
-from .messages import NOT_A_FLUTTER_PROJECT_MESSAGE
+from .messages import INDEXING_IN_PROGRESS_MESSAGE, NOT_A_DART_FLUTTER_PROJECT_MESSAGE, NOT_A_FLUTTER_PROJECT_MESSAGE
 from .process import run_process
 from .env import get_dart_path, get_flutter_path, load_env
 from .constants import PUBSPEC_YAML_FILE_NAME
 
-import sublime as sublime
+import sublime
 
 
-class __CurrentProject:
+class _CurrentProject(object):
     def __init__(self, window):
         self.__window = window
         self.__path = window.folders()[0]
@@ -32,6 +30,9 @@ class __CurrentProject:
             self.__start_process(["clean"])
         else:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
+
+    def pub_add(self, package_name):
+        self.__start_process(["pub", "add", package_name])
 
     def has_dependency_on(self, dep):
         return self.__pubspec["dependencies"][dep] is not None
@@ -66,27 +67,51 @@ class __CurrentProject:
         ).start()
 
 
-__opened_projects = {}
+class _ProjectManager(object):
+    def __init__(self) -> None:
+        super().__init__()
+        self.__opened_projects = {}
+        self.__windows_being_indexed = set()
+
+    def load_project(self, window):
+        win_id = window.id()
+
+        if win_id not in self.__opened_projects:
+            if win_id in self.__windows_being_indexed:
+                sublime.error_message(INDEXING_IN_PROGRESS_MESSAGE)
+                return None
+
+            self.__windows_being_indexed.add(win_id)
+
+            project_path = window.folders()[0]
+            is_dart_project = os.path.isfile(
+                os.path.join(project_path, PUBSPEC_YAML_FILE_NAME)
+            )
+
+            if is_dart_project:
+                load_env(window)
+                project = _CurrentProject(window)
+                self.__windows_being_indexed.remove(win_id)
+                self.__opened_projects[window.id()] = project
+
+                return project
+
+            self.__windows_being_indexed.remove(win_id)
+            sublime.error_message(NOT_A_DART_FLUTTER_PROJECT_MESSAGE)
+            return None
+
+        return self.__opened_projects[win_id]
 
 
-def load_project(window):
-    global __opened_projects
+    def unload_project(self, window):
+        try:
+            self.__opened_projects.pop(window.id())
+        except KeyError:
+            pass
 
-    win_id = window.id()
 
-    if win_id not in __opened_projects:
-        project_path = window.folders()[0]
-        is_dart_project = os.path.isfile(
-            os.path.join(project_path, PUBSPEC_YAML_FILE_NAME)
-        )
+_project_manager = _ProjectManager()
 
-        if is_dart_project:
-            load_env(window)
-            project = __CurrentProject(window)
-            __opened_projects[window.id()] = project
 
-            return project
-    else:
-        return __opened_projects[win_id]
-
-    return None
+def get_project_manager():
+    return _project_manager

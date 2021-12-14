@@ -1,8 +1,8 @@
-__PLUGIN_OUTPUT_PANEL_NAME = "dart"
+_PLUGIN_OUTPUT_PANEL_NAME = "dart"
 
 # borrowed from Sublime-LSP's panel settings
 # https://github.com/sublimelsp/LSP/blob/main/plugin/core/panels.py
-__OUTPUT_PANEL_SETTINGS = {
+_OUTPUT_PANEL_SETTINGS = {
     "auto_indent": False,
     "draw_indent_guides": False,
     "draw_unicode_white_space": "none",
@@ -23,10 +23,10 @@ __OUTPUT_PANEL_SETTINGS = {
 
 
 def create_output_panel(window):
-    panel = window.create_output_panel(__PLUGIN_OUTPUT_PANEL_NAME)
+    panel = window.create_output_panel(_PLUGIN_OUTPUT_PANEL_NAME)
     settings = panel.settings()
 
-    for k, v in __OUTPUT_PANEL_SETTINGS.items():
+    for k, v in _OUTPUT_PANEL_SETTINGS.items():
         settings.set(k, v)
 
     return panel
@@ -34,7 +34,7 @@ def create_output_panel(window):
 
 def show_output_panel(window):
     window.run_command(
-        "show_panel", {"panel": "output.{}".format(__PLUGIN_OUTPUT_PANEL_NAME)}
+        "show_panel", {"panel": "output.{}".format(_PLUGIN_OUTPUT_PANEL_NAME)}
     )
 
 
