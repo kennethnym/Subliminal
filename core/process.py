@@ -13,5 +13,5 @@ def run_process(command, cwd, output_panel):
 
     out = process.stdout
     if out:
-        for line in iter(out.readline, b''):
+        for line in iter(out.readline, b""):
             append_to_output_panel(output_panel, line)

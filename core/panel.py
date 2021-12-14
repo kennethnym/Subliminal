@@ -41,6 +41,6 @@ def show_output_panel(window):
 def append_to_output_panel(panel, line):
     panel.set_read_only(False)
     panel.run_command("append", {
-        "characters": str(line, encoding='utf8')
+        "characters": str(line, encoding="utf8")
     })
     panel.set_read_only(True)
