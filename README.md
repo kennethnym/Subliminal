@@ -16,6 +16,7 @@ and **does not** provide syntax/autocompletion support.
 
 - [ ] Dart/Flutter commands
     - [x] `pub get`
+    - [x] `pub add`
     - [x] `fluter clean`
 - [ ] Open ios/android folder in Xcode/Android Studio
 - [ ] Select device
