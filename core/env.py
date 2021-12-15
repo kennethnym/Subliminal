@@ -6,7 +6,7 @@ import sublime
 _env = {}
 
 def load_env(window):
-    _env[window.id()] = sublime.load_settings(LSP_SETTINGS).get('env', {})
+    _env[window.id()] = sublime.load_settings(LSP_SETTINGS).get('env', dict(os.environ))
 
 
 def get_flutter_path(window):

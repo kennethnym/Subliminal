@@ -5,8 +5,8 @@ import sublime_plugin
 
 
 class PubAddCommand(DartCommand):
-    def run(self, _, package_name):
-        project = super(PubAddCommand, self).get_current_project()
+    def run(self, package_name):
+        project = super(PubAddCommand, self).project()
         if project:
             project.pub_add(package_name)
 

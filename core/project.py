@@ -22,21 +22,30 @@ class _CurrentProject(object):
 
         self.__load_pubspec()
 
+    @property
+    def window(self):
+        return self.__window
+
+    
     def pub_get(self):
         self.__start_process(["pub", "get"])
 
+    
     def clean(self):
         if self.__is_flutter_project:
             self.__start_process(["clean"])
         else:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
 
+    
     def pub_add(self, package_name):
         self.__start_process(["pub", "add", package_name])
 
+    
     def has_dependency_on(self, dep):
         return self.__pubspec["dependencies"][dep] is not None
 
+    
     def __load_pubspec(self):
         with open(os.path.join(self.__path, PUBSPEC_YAML_FILE_NAME)) as stream:
             try:
@@ -47,6 +56,7 @@ class _CurrentProject(object):
                 self.__is_pubspec_invalid = True
                 pass
 
+    
     def __start_process(self, command):
         panel = create_output_panel(self.__window)
 
@@ -73,12 +83,14 @@ class _ProjectManager(object):
         self.__opened_projects = {}
         self.__windows_being_indexed = set()
 
+    
     def load_project(self, window):
         win_id = window.id()
 
-        if win_id not in self.__opened_projects:
+        try:
+            return self.__opened_projects[win_id]
+        except KeyError:
             if win_id in self.__windows_being_indexed:
-                sublime.error_message(INDEXING_IN_PROGRESS_MESSAGE)
                 return None
 
             self.__windows_being_indexed.add(win_id)
@@ -93,14 +105,17 @@ class _ProjectManager(object):
                 project = _CurrentProject(window)
                 self.__windows_being_indexed.remove(win_id)
                 self.__opened_projects[window.id()] = project
-
                 return project
 
             self.__windows_being_indexed.remove(win_id)
-            sublime.error_message(NOT_A_DART_FLUTTER_PROJECT_MESSAGE)
             return None
 
-        return self.__opened_projects[win_id]
+
+    def get_project(self, window):
+        try:
+            return self.__opened_projects[window.id()]
+        except KeyError:
+            return None
 
 
     def unload_project(self, window):

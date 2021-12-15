@@ -4,7 +4,7 @@ import sublime
 import sublime_plugin
 
 class PubGetCommand(DartCommand):
-    def run(self, _):
-        project = super(PubGetCommand, self).get_current_project()
+    def run(self):
+        project = super(PubGetCommand, self).project()
         if project:
             project.pub_get()
