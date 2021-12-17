@@ -23,6 +23,7 @@ class SublimeEventListener(sublime_plugin.EventListener):
             wm = get_window_manager(window)
             self.__window_manager = wm
             if wm.project:
+                print('has project')
                 wm.start_daemon()
 
 

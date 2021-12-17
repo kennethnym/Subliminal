@@ -1,44 +1,31 @@
 import asyncio
 import os
+from threading import Thread
 
+from .daemon.api.daemon import DaemonConnectedEvent
 from .project import CurrentProject
 from .daemon import FlutterDaemon, FlutterDaemonClient
+from .env import Env
 
 import sublime
 
 
-class WindowManager(object):
-    def __init__(self, window) -> None:
+class WindowManager:
+    def __init__(self, window: sublime.Window) -> None:
         super().__init__()
     
-        env = sublime.load_settings("LSP-Dart.sublime-settings").get("env", dict(os.environ))
+        env_dict = sublime.load_settings("LSP-Dart.sublime-settings").get("env", dict(os.environ))
 
-        if "FLUTTER_ROOT" in env:
-            self.__flutter_path = os.path.join(env["FLUTTER_ROOT"], "bin", "flutter")
-            try:
-                self.__dart_path = os.path.join(env["DART_SDK"], "bin", "dart")
-            except KeyError:
-                self.__dart_path = os.path.join(env["FLUTTER_ROOT"], "bin", "dart")
+        if "FLUTTER_ROOT" in env_dict:
+            env = Env.from_dict(env_dict)
 
             self.__window = window
             self.__is_daemon_started = False
-            self.__daemon = FlutterDaemon(self.__flutter_path)
+            self.__daemon = FlutterDaemon(env.flutter_path)
             self.__daemon_client = FlutterDaemonClient(self.__daemon)
-            self.__project = CurrentProject(window, self.__daemon_client)
-
-            asyncio.create_task(self.__initialize())
+            self.__project = CurrentProject(window, env, self.__daemon_client)
         else:
             sublime.error_message('Unable to determine the path to the Flutter SDK. Please define "FLUTTER_ROOT" under the "env" key in LSP-Dart settings.')
-
-
-    @property
-    def flutter_path(self):
-        return self.__flutter_path
-
-
-    @property
-    def dart_path(self):
-        return self.__dart_path
 
 
     @property
@@ -50,6 +37,7 @@ class WindowManager(object):
         if self.__is_daemon_started:
             return
 
+        self.__daemon_client.add_event_listener(self.__daemon_event_listener)
         self.__daemon.start()
         self.__is_daemon_started = True
 
@@ -59,10 +47,12 @@ class WindowManager(object):
         _unregister_window_manager(self.__window)
 
 
-    async def __initialize(self):
-        while not self.__daemon.is_started:
-            continue
+    def __daemon_event_listener(self, event):
+        if isinstance(event, DaemonConnectedEvent):
+            Thread(target=lambda: asyncio.run(self.__initialize())).start()
 
+
+    async def __initialize(self):
         await self.__project.initialize()
         await self.__daemon_client.device.enable()
 
@@ -77,7 +67,7 @@ def _unregister_window_manager(window):
         pass
 
 
-def get_window_manager(window):
+def get_window_manager(window) -> WindowManager:
     win_id = window.id()
     try:
         return __window_managers[win_id]

@@ -3,22 +3,22 @@ from .request import Request
 from .domain import Domain
 
 
-class DaemonConnectedEvent(object):
-    def __init__(self, version, pid) -> None:
+class DaemonConnectedEvent:
+    def __init__(self, version: str, pid: int) -> None:
         super().__init__()
         self.version = version
         self.pid = pid
 
 
-class DaemonLogEvent(object):
+class DaemonLogEvent:
     def __init__(self, log=None, error=False) -> None:
         super().__init__()
         self.log = log
         self.error = error
 
 
-class DaemonShowMessageEvent(object):
-    def __init__(self, level, title, message) -> None:
+class DaemonShowMessageEvent:
+    def __init__(self, level: str, title: str, message: str) -> None:
         super().__init__()
         self.level = level
         self.title = title
@@ -36,7 +36,7 @@ class DaemonDomain(Domain):
     # daemon methods
     __shutdown = dot(nsp, "shutdown")
 
-    event_constructor_map = {
+    _event_constructor_map = {
         connected: DaemonConnectedEvent,
         log: DaemonLogEvent,
         show_message: DaemonShowMessageEvent

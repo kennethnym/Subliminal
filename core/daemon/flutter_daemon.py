@@ -1,12 +1,12 @@
 import subprocess
 import json
 from threading import Thread
-from typing import Any, Callable, IO
+from typing import Any, Callable, IO, Dict
 
 from .api.request import Request
 
 
-DaemonData = dict[str, Any]
+DaemonData = Dict[str, Any]
 DaemonDataListener = Callable[[DaemonData], None]
 
 class FlutterDaemon(object):
@@ -43,7 +43,9 @@ class FlutterDaemon(object):
     def make_request(self, request: Request):
         stdin = self.__daemon_stdin
         if stdin:
-            stdin.write(request.serialize().encode())
+            print(request.serialize())
+            stdin.write((request.serialize() + '\n').encode())
+            stdin.flush()
 
 
     def __on_message(self, json: DaemonData):
@@ -52,9 +54,11 @@ class FlutterDaemon(object):
 
 
     def __start_daemon(self):
+        print('starting daemon...')
         process = subprocess.Popen(
             [self.__flutter_path, "daemon"],
             stdout=subprocess.PIPE,
+            stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             bufsize=1
         )
@@ -66,8 +70,9 @@ class FlutterDaemon(object):
         if out:
             for line in iter(out.readline, b""):
                 j = str(line, encoding='utf8')
-                print('DAEMON: ' + j)
+                print('DAEMON: ' + j, end='')
                 try:
-                    self.__on_message(json.loads(j[1:-1]))
-                except ValueError:
+                    self.__on_message(json.loads((j.strip())[1:-1]))
+                except ValueError as e:
+                    print(e)
                     continue

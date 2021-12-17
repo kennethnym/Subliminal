@@ -1,4 +1,7 @@
-from ... import asyncio
+import asyncio
+
+from .request import Request
+from ..flutter_daemon import FlutterDaemon
 
 class Domain:
     _event_constructor_map = {}
@@ -6,30 +9,26 @@ class Domain:
 
     _response_constructor_map = {}
 
-    __request_futures = {}
-
-    __request_types = {}
-
-    def __init__(self, daemon) -> None:
+    def __init__(self, daemon: FlutterDaemon) -> None:
         self.__daemon = daemon
+        self.__request_futures = {} # type: dict[int, asyncio.Future]
+        self.__request_types = {}   # type: dict[int, str]
         daemon.listen(self.__daemon_listener)
 
 
     @classmethod
     def parse_event(cls, json):
-        return cls._event_constructor_map[json["event"]](**json["params"])
+        try:
+            return cls._event_constructor_map[json["event"]](**json["params"])
+        except KeyError:
+            return None
 
 
-    def make_request(self, request):
+    def make_request(self, request: Request):
         self.__request_types[request.id] = request.method
         future = asyncio.get_event_loop().create_future()
-        if request.has_response:
-            self.__request_futures[request.id] = future
-
+        self.__request_futures[request.id] = future
         self.__daemon.make_request(request)
-
-        if not request.has_response:
-            future.set_result(None)
 
         return future
 
@@ -49,7 +48,13 @@ class Domain:
     def __daemon_listener(self, json):
         try:
             req_id = json["id"]
-            response = self.__parse_method_response(json["result"])
-            self.__request_futures[req_id].set_result(response)
-        except KeyError:
+            future = self.__request_futures[req_id]
+
+            response = None
+            if "result" in json:
+                response = self.__parse_method_response(json)
+
+            future.get_loop().call_soon_threadsafe(future.set_result, response)
+        except KeyError as e:
+            print(e)
             pass

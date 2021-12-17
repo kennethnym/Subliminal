@@ -1,20 +1,22 @@
-from typing import Any, Callable
-from .flutter_daemon import DaemonData
+from typing import Any, Callable, Dict
+from .flutter_daemon import DaemonData, FlutterDaemon
 from .api.device import DeviceDomain
 from .api.daemon import DaemonDomain
 from .api.utils import get_event_domain
 
 
+DaemonEventListener = Callable[[Any], None]
+
 class FlutterDaemonClient:
-    __event_json_parser: dict[str, Callable[[DaemonData], Any]] = {
+    __event_json_parser: Dict[str, Callable[[DaemonData], Any]] = {
         DaemonDomain.nsp: DaemonDomain.parse_event,
         DeviceDomain.nsp: DeviceDomain.parse_event,
     }
 
-    def __init__(self, daemon) -> None:
+    def __init__(self, daemon: FlutterDaemon) -> None:
         self.__daemon_domain = DaemonDomain(daemon)
         self.__device_domain = DeviceDomain(daemon)
-        self.__event_listeners = []
+        self.__event_listeners = [] # type: list[DaemonEventListener]
 
         daemon.listen(self.__daemon_listener)
 
@@ -29,7 +31,7 @@ class FlutterDaemonClient:
         return self.__device_domain
 
 
-    def add_event_listener(self, listener):
+    def add_event_listener(self, listener: DaemonEventListener):
         self.__event_listeners.append(listener)
 
 
@@ -37,5 +39,6 @@ class FlutterDaemonClient:
         if "event" in json:
             domain = get_event_domain(json["event"])
             event = self.__event_json_parser[domain](json)
-            for listener in self.__event_listeners:
-                listener(event)
+            if event:
+                for listener in self.__event_listeners:
+                    listener(event)

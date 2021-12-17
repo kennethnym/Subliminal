@@ -1,4 +1,4 @@
-from ... import asyncio
+import asyncio
 from .domain import Domain
 from .utils import dot
 from .request import Request
@@ -14,7 +14,7 @@ class DeviceRemovedEvent:
 
 
 class Device:
-    def __init__(self, id, name, platform, category, platformType, ephemeral, emulator, emulatorId) -> None:
+    def __init__(self, id: str, name: str, platform: str, category: str, platformType: str, ephemeral: bool, emulator: bool, emulatorId: str) -> None:
         self.id = id
         self.name = name
         self.platform = platform
@@ -46,25 +46,24 @@ class DeviceDomain(Domain):
         __get_devices: Device
     }
 
-
-    @asyncio.coroutine
-    def enable(self):
-        yield from super().make_request(Request(
+    async def enable(self):
+        await super().make_request(Request(
             method=self.__enable,
             has_response=False,
         ))
 
 
-    @asyncio.coroutine
-    def disable(self):
-        yield from super().make_request(Request(
+    async def disable(self):
+        await super().make_request(Request(
             method=self.__disable,
             has_response=False,
         ))
 
 
-    def get_devices(self):
-        return super().make_request(Request(
+    async def get_devices(self):
+        print('waiting')
+        devices = await super().make_request(Request(
             method=self.__get_devices,
             has_response=True,
         ))
+        return devices
