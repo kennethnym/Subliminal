@@ -1,6 +1,6 @@
 # Subliminal [Work in progress!]
 
-A Sublime Text 3/4 plugin that adds support for Dart/Flutter projects. This plugin adds commands for working with Dart/Flutter projects,
+A Sublime Text 4 plugin that adds support for Dart/Flutter projects. This plugin adds commands for working with Dart/Flutter projects,
 and **does not** provide syntax/autocompletion support.
 
 ## Installation

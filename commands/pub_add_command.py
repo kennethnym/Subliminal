@@ -1,4 +1,3 @@
-from ..core.project import get_project_manager
 from .dart_command import DartCommand
 
 import sublime_plugin
@@ -9,6 +8,7 @@ class PubAddCommand(DartCommand):
         project = super(PubAddCommand, self).project()
         if project:
             project.pub_add(package_name)
+
 
     def input(self, _):
         return PackageNameInputHandler()

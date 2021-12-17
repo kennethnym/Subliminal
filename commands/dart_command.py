@@ -1,5 +1,4 @@
 from ..core.window_manager import get_window_manager
-from ..core.messages import NOT_A_DART_FLUTTER_PROJECT_MESSAGE
 
 import sublime
 import sublime_plugin

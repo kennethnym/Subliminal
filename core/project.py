@@ -1,8 +1,10 @@
 import os.path
 import yaml
 from threading import Thread
+from typing import Any
 from yaml.error import YAMLError
 
+from .daemon.api.device import DeviceAddedEvent, DeviceRemovedEvent
 from .panel import create_output_panel, show_output_panel
 from .messages import INDEXING_IN_PROGRESS_MESSAGE, NOT_A_DART_FLUTTER_PROJECT_MESSAGE, NOT_A_FLUTTER_PROJECT_MESSAGE
 from .process import run_process
@@ -12,21 +14,31 @@ from .constants import PUBSPEC_YAML_FILE_NAME
 import sublime
 
 
-class _CurrentProject(object):
-    def __init__(self, window):
+class CurrentProject(object):
+    def __init__(self, window, daemon_client):
         self.__window = window
         self.__path = window.folders()[0]
-        self.__pubspec = {}
+        self.__pubspec = {} # type: dict[str, Any]
+        self.__availble_devices = {}
+        self.__daemon_client = daemon_client
         self.__is_pubspec_invalid = True
         self.__is_flutter_project = False
 
         self.__load_pubspec()
 
+
     @property
     def window(self):
         return self.__window
 
-    
+
+    async def initialize(self):
+        devices = await self.__daemon_client.device.get_devices()
+        for device in devices:
+            self.__availble_devices[device.id] = device
+        self.__daemon_client.add_event_listener(self.__daemon_event_listener)
+
+
     def pub_get(self):
         self.__start_process(["pub", "get"])
 
@@ -45,7 +57,14 @@ class _CurrentProject(object):
     def has_dependency_on(self, dep):
         return self.__pubspec["dependencies"][dep] is not None
 
-    
+
+    def __daemon_event_listener(self, event):
+        if isinstance(event, DeviceAddedEvent):
+            self.__availble_devices[event.device.id] = event.device
+        elif isinstance(event, DeviceRemovedEvent):
+            self.__availble_devices.pop(event.device.id)
+
+
     def __load_pubspec(self):
         with open(os.path.join(self.__path, PUBSPEC_YAML_FILE_NAME)) as stream:
             try:
@@ -75,58 +94,3 @@ class _CurrentProject(object):
                 panel,
             ),
         ).start()
-
-
-class _ProjectManager(object):
-    def __init__(self) -> None:
-        super().__init__()
-        self.__opened_projects = {}
-        self.__windows_being_indexed = set()
-
-    
-    def load_project(self, window):
-        win_id = window.id()
-
-        try:
-            return self.__opened_projects[win_id]
-        except KeyError:
-            if win_id in self.__windows_being_indexed:
-                return None
-
-            self.__windows_being_indexed.add(win_id)
-
-            project_path = window.folders()[0]
-            is_dart_project = os.path.isfile(
-                os.path.join(project_path, PUBSPEC_YAML_FILE_NAME)
-            )
-
-            if is_dart_project:
-                load_env(window)
-                project = _CurrentProject(window)
-                self.__windows_being_indexed.remove(win_id)
-                self.__opened_projects[window.id()] = project
-                return project
-
-            self.__windows_being_indexed.remove(win_id)
-            return None
-
-
-    def get_project(self, window):
-        try:
-            return self.__opened_projects[window.id()]
-        except KeyError:
-            return None
-
-
-    def unload_project(self, window):
-        try:
-            self.__opened_projects.pop(window.id())
-        except KeyError:
-            pass
-
-
-_project_manager = _ProjectManager()
-
-
-def get_project_manager():
-    return _project_manager

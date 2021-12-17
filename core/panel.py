@@ -1,3 +1,6 @@
+import sublime
+
+
 _PLUGIN_OUTPUT_PANEL_NAME = "dart"
 
 # borrowed from Sublime-LSP's panel settings
@@ -22,7 +25,7 @@ _OUTPUT_PANEL_SETTINGS = {
 }
 
 
-def create_output_panel(window):
+def create_output_panel(window: sublime.Window):
     panel = window.create_output_panel(_PLUGIN_OUTPUT_PANEL_NAME)
     settings = panel.settings()
 
@@ -32,13 +35,13 @@ def create_output_panel(window):
     return panel
 
 
-def show_output_panel(window):
+def show_output_panel(window: sublime.Window):
     window.run_command(
         "show_panel", {"panel": "output.{}".format(_PLUGIN_OUTPUT_PANEL_NAME)}
     )
 
 
-def append_to_output_panel(panel, line):
+def append_to_output_panel(panel: sublime.View, line: bytes):
     panel.set_read_only(False)
     panel.run_command("append", {
         "characters": str(line, encoding="utf8")
