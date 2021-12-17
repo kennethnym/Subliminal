@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict
+
 from .flutter_daemon import DaemonData, FlutterDaemon
+from .api.app import AppDomain
 from .api.device import DeviceDomain
 from .api.daemon import DaemonDomain
 from .api.utils import get_event_domain
@@ -16,6 +18,7 @@ class FlutterDaemonClient:
     def __init__(self, daemon: FlutterDaemon) -> None:
         self.__daemon_domain = DaemonDomain(daemon)
         self.__device_domain = DeviceDomain(daemon)
+        self.__app_domain = AppDomain(daemon)
         self.__event_listeners = [] # type: list[DaemonEventListener]
 
         daemon.listen(self.__daemon_listener)
@@ -29,6 +32,11 @@ class FlutterDaemonClient:
     @property
     def device(self):
         return self.__device_domain
+
+
+    @property
+    def app(self):
+        return self.__app_domain
 
 
     def add_event_listener(self, listener: DaemonEventListener):

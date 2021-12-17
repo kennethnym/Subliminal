@@ -18,6 +18,8 @@ and **does not** provide syntax/autocompletion support.
     - [x] `pub get`
     - [x] `pub add`
     - [x] `fluter clean`
+    - [x] `flutter run`
+- [ ] Hot reload/Restart
 - [ ] Open ios/android folder in Xcode/Android Studio
 - [ ] Select device
 - [ ] Add dependency

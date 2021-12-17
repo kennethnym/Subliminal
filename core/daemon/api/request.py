@@ -2,7 +2,7 @@ import json
 import random
 
 class Request:
-    def __init__(self, method, has_response, **kwargs) -> None:
+    def __init__(self, method: str, has_response: bool, **kwargs) -> None:
         self.__method = method
         self.__args = kwargs
         self.__id = random.getrandbits(32)
