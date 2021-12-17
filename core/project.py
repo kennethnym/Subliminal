@@ -1,5 +1,5 @@
+import os
 from threading import Thread
-from typing import Any
 
 from .daemon.flutter_daemon_client import FlutterDaemonClient
 from .daemon.api.device import DeviceAddedEvent, DeviceRemovedEvent, Device
@@ -17,14 +17,12 @@ class CurrentProject(object):
 
         self.__window = window
         self.__path = window.folders()[0]
-        self.__pubspec = {} # type: dict[str, Any]
+        self.__pubspec = {}
         self.__availble_devices = {} # type: dict[str, Device]
         self.__daemon_client = daemon_client
         self.__is_pubspec_invalid = True
         self.__is_flutter_project = False
         self.__env = env
-
-        # self.__load_pubspec()
 
 
     @property
@@ -43,6 +41,7 @@ class CurrentProject(object):
 
 
     async def initialize(self):
+        self.__load_pubspec()
         devices = await self.__daemon_client.device.get_devices()
         for device in devices:
             self.__availble_devices[device.id] = device
@@ -73,6 +72,14 @@ class CurrentProject(object):
 
     def has_dependency_on(self, dep):
         return self.__pubspec["dependencies"][dep] is not None
+
+
+    def __load_pubspec(self):
+        with open(os.path.join(self.__path, 'pubspec.yaml'), 'r') as pubspec:
+            for line in pubspec:
+                if line.rstrip().startswith("flutter:"):
+                    self.__is_flutter_project = True
+                    break
 
 
     def __daemon_event_listener(self, event):
