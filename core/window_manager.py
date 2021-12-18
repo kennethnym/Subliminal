@@ -75,3 +75,14 @@ def get_window_manager(window) -> WindowManager:
         wm = WindowManager(window)
         __window_managers[window.id()] = wm
         return wm
+
+def unload_window_manager(window: sublime.Window):
+    try:
+        __window_managers[window.id()].unload()
+    except KeyError:
+        pass
+
+
+def unload_window_managers():
+    for _, wm in __window_managers.items():
+        unload_window_manager(wm)

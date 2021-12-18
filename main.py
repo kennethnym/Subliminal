@@ -1,10 +1,32 @@
 import os
-from .core.window_manager import WindowManager, get_window_manager
+from threading import Thread
+from typing import List
+from .core.window_manager import WindowManager, get_window_manager, unload_window_manager, unload_window_managers
 from .core.constants import PUBSPEC_YAML_FILE_NAME
 from .commands import *
 
 import sublime
 import sublime_plugin
+
+
+def _load_window_manager(window: sublime.Window):
+    project_path = window.folders()[0]
+    applicable = os.path.isfile(
+        os.path.join(project_path, PUBSPEC_YAML_FILE_NAME)
+    )
+    if applicable:
+        wm = get_window_manager(window)
+        if wm.project:
+            wm.start_daemon()
+
+
+def plugin_loaded():
+    for window in sublime.windows():
+        Thread(target=_load_window_manager, args=(window,)).start()
+
+
+def plugin_unloaded():
+    unload_window_managers()
 
 
 class SublimeEventListener(sublime_plugin.EventListener):
@@ -14,20 +36,9 @@ class SublimeEventListener(sublime_plugin.EventListener):
         self.__window_manager = None # type: WindowManager | None
 
 
-    def on_new_window_async(self, window: sublime.Window):    
-        project_path = window.folders()[0]
-        self.__is_applicable = os.path.isfile(
-            os.path.join(project_path, PUBSPEC_YAML_FILE_NAME)
-        )
-        if self.__is_applicable and not self.__window_manager:
-            wm = get_window_manager(window)
-            self.__window_manager = wm
-            if wm.project:
-                print('has project')
-                wm.start_daemon()
+    def on_new_window_async(self, window: sublime.Window):
+        _load_window_manager(window)
 
 
-    def on_pre_close_window(self, _):
-        wm = self.__window_manager
-        if wm:
-            wm.unload()
+    def on_pre_close_window(self, window: sublime.Window):
+        unload_window_manager(window)
