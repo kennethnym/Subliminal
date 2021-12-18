@@ -1,6 +1,7 @@
 import asyncio
 import os
 from threading import Thread
+from typing import Dict, Set
 
 from .daemon.api.daemon import DaemonConnectedEvent
 from .project import CurrentProject
@@ -57,32 +58,47 @@ class WindowManager:
         await self.__daemon_client.device.enable()
 
 
-__window_managers = {}
+_window_managers: Dict[int, WindowManager] = {}
+
+_ignored_window: Set[int] = set()
 
 
-def _unregister_window_manager(window):
+def _unregister_window_manager(window: sublime.Window):
     try:
-        __window_managers.pop(window.id())
+        _window_managers.pop(window.id())
     except KeyError:
         pass
+
+
+def ignore_window(window: sublime.Window):
+    _ignored_window.add(window.id())
+
+
+def unignore_window(window: sublime.Window):
+    _ignored_window.remove(window.id())
+
+
+def is_window_ignored(window: sublime.Window):
+    return window.id() in _ignored_window
 
 
 def get_window_manager(window) -> WindowManager:
     win_id = window.id()
     try:
-        return __window_managers[win_id]
+        return _window_managers[win_id]
     except KeyError:
         wm = WindowManager(window)
-        __window_managers[window.id()] = wm
+        _window_managers[window.id()] = wm
         return wm
+
 
 def unload_window_manager(window: sublime.Window):
     try:
-        __window_managers[window.id()].unload()
+        _window_managers[window.id()].unload()
     except KeyError:
         pass
 
 
 def unload_window_managers():
-    for _, wm in __window_managers.items():
+    for _, wm in _window_managers.items():
         unload_window_manager(wm)

@@ -1,8 +1,5 @@
-from ..core.messages import COMMAND_UNAVAILABLE
 from .flutter_select_device_command import DeviceListInputHandler
 from .dart_command import DartCommand
-
-import sublime
 
 
 class FlutterRunCommand(DartCommand):
@@ -11,8 +8,6 @@ class FlutterRunCommand(DartCommand):
             if device:
                 project.target_device = device
             project.run()
-        else:
-            sublime.error_message(COMMAND_UNAVAILABLE)
 
 
     def input(self, _):

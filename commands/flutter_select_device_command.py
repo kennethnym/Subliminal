@@ -1,5 +1,5 @@
 from ..core.project import CurrentProject
-from ..core.messages import COMMAND_UNAVAILABLE, NO_AVAILABLE_DEVICES
+from ..core.messages import NO_AVAILABLE_DEVICES
 from .dart_command import DartCommand
 
 import sublime
@@ -7,14 +7,11 @@ import sublime_plugin
 
 class FlutterSelectDeviceCommand(DartCommand):
     def run(self, device: str = None):
-        project = super().project()
-        if project:
+        if project := super().project():
             if not device:
                 sublime.error_message(NO_AVAILABLE_DEVICES)
             else:
                 project.target_device = device
-        else:
-            sublime.error_message(COMMAND_UNAVAILABLE)
 
 
     def input(self, _):

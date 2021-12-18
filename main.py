@@ -1,7 +1,7 @@
 import os
 from threading import Thread
 from typing import List
-from .core.window_manager import WindowManager, get_window_manager, unload_window_manager, unload_window_managers
+from .core.window_manager import WindowManager, get_window_manager, ignore_window, unignore_window, unload_window_manager, unload_window_managers
 from .core.constants import PUBSPEC_YAML_FILE_NAME
 from .commands import *
 
@@ -18,6 +18,8 @@ def _load_window_manager(window: sublime.Window):
         wm = get_window_manager(window)
         if wm.project:
             wm.start_daemon()
+    else:
+        ignore_window(window)
 
 
 def plugin_loaded():
@@ -41,4 +43,5 @@ class SublimeEventListener(sublime_plugin.EventListener):
 
 
     def on_pre_close_window(self, window: sublime.Window):
+        unignore_window(window)
         unload_window_manager(window)

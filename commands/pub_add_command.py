@@ -1,17 +1,12 @@
-from ..core.messages import COMMAND_UNAVAILABLE
 from .dart_command import DartCommand
 
-import sublime
 import sublime_plugin
 
 
 class PubAddCommand(DartCommand):
     def run(self, package_name):
-        project = super().project()
-        if project:
+        if project := super().project():
             project.pub_add(package_name)
-        else:
-            sublime.error_message(COMMAND_UNAVAILABLE)
 
 
     def input(self, _):

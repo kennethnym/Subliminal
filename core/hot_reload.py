@@ -8,6 +8,7 @@ class FileChangeListener(sublime_plugin.ViewEventListener):
         super().__init__(view)
         self.__window_manager = None # type: WindowManager | None
 
+
     @classmethod
     def applies_to_primary_view_only(cls):
         return True
