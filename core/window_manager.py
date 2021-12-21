@@ -5,7 +5,7 @@ from typing import Dict, Set
 
 from .daemon.api.daemon import DaemonConnectedEvent
 from .project import CurrentProject
-from .daemon import FlutterDaemon, FlutterDaemonClient
+from .daemon import FlutterRpcProcess, FlutterRpcClient
 from .env import Env
 
 import sublime
@@ -19,11 +19,13 @@ class WindowManager:
 
         if "FLUTTER_ROOT" in env_dict:
             env = Env.from_dict(env_dict)
+            loop = asyncio.new_event_loop()
 
             self.__window = window
             self.__is_daemon_started = False
-            self.__daemon = FlutterDaemon(env.flutter_path)
-            self.__daemon_client = FlutterDaemonClient(self.__daemon)
+            self.__event_loop = loop
+            self.__daemon = FlutterRpcProcess([env.flutter_path, "daemon"], loop)
+            self.__daemon_client = FlutterRpcClient(self.__daemon)
             self.__project = CurrentProject(window, env, self.__daemon_client)
         else:
             sublime.error_message('Unable to determine the path to the Flutter SDK. Please define "FLUTTER_ROOT" under the "env" key in LSP-Dart settings.')
@@ -34,10 +36,16 @@ class WindowManager:
         return self.__project
 
 
+    @property
+    def event_loop(self):
+        return self.__event_loop
+
+
     def start_daemon(self):
         if self.__is_daemon_started:
             return
 
+        Thread(target=self.__event_loop.run_forever).start()
         self.__daemon_client.add_event_listener(self.__daemon_event_listener)
         self.__daemon.start()
         self.__is_daemon_started = True
@@ -50,7 +58,7 @@ class WindowManager:
 
     def __daemon_event_listener(self, event):
         if isinstance(event, DaemonConnectedEvent):
-            Thread(target=lambda: asyncio.run(self.__initialize())).start()
+            asyncio.run_coroutine_threadsafe(self.__initialize(), self.__event_loop)
 
 
     async def __initialize(self):
@@ -101,4 +109,4 @@ def unload_window_manager(window: sublime.Window):
 
 def unload_window_managers():
     for _, wm in _window_managers.items():
-        unload_window_manager(wm)
+        wm.unload()

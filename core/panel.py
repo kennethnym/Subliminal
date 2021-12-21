@@ -1,3 +1,4 @@
+from typing import Union
 import sublime
 
 
@@ -39,6 +40,10 @@ def show_output_panel(window: sublime.Window):
     window.run_command(
         "show_panel", {"panel": "output.{}".format(_PLUGIN_OUTPUT_PANEL_NAME)}
     )
+
+
+def destroy_output_panel(window: sublime.Window):
+    window.destroy_output_panel(_PLUGIN_OUTPUT_PANEL_NAME)
 
 
 def append_to_output_panel(panel: sublime.View, line: bytes):

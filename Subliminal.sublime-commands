@@ -4,5 +4,5 @@
 	{ "caption": "Flutter: Select a device...", "command": "flutter_select_device" },
 	{ "caption": "Pub: Add a package", "command": "pub_add" },
 	{ "caption": "Pub: Get packages", "command": "pub_get" },
-	{ "caption": "Test", "command": "test" }
+	{ "caption": "Subliminal: Test", "command": "subliminal_test" }
 ]

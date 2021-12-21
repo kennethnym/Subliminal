@@ -1,7 +1,7 @@
 import asyncio
 
 from .request import Request
-from ..flutter_daemon import FlutterDaemon
+from ..flutter_daemon import FlutterRpcProcess
 
 class Domain:
     _event_constructor_map = {}
@@ -9,7 +9,7 @@ class Domain:
 
     _response_constructor_map = {}
 
-    def __init__(self, daemon: FlutterDaemon) -> None:
+    def __init__(self, daemon: FlutterRpcProcess) -> None:
         self.__daemon = daemon
         self.__request_futures = {} # type: dict[int, asyncio.Future]
         self.__request_types = {}   # type: dict[int, str]
@@ -56,5 +56,4 @@ class Domain:
 
             future.get_loop().call_soon_threadsafe(future.set_result, response)
         except KeyError as e:
-            print(e)
             pass

@@ -10,8 +10,13 @@ class DartCommand(sublime_plugin.WindowCommand):
         return not is_window_ignored(self.window)
 
 
+    @property
+    def window_manager(self):
+        return get_window_manager(self.window)
+
+
     def project(self):
-        wm = get_window_manager(self.window)
+        wm = self.window_manager
 
         if project := wm.project:
             return project

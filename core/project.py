@@ -1,19 +1,23 @@
 import os
+import signal
+import subprocess
 from threading import Thread
+from typing import List
 
-from .daemon.flutter_daemon_client import FlutterDaemonClient
+from .daemon.flutter_daemon_client import FlutterRpcClient
 from .daemon.api.device import DeviceAddedEvent, DeviceRemovedEvent, Device
 from .daemon.api.app import AppStartEvent, AppStartedEvent
-from .panel import create_output_panel, show_output_panel
-from .messages import APP_NOT_RUNNING, INDEXING_IN_PROGRESS_MESSAGE, NO_DEVICE_SELECTED, NOT_A_DART_FLUTTER_PROJECT_MESSAGE, NOT_A_FLUTTER_PROJECT_MESSAGE
+from .panel import create_output_panel, destroy_output_panel, show_output_panel
+from .messages import APP_NOT_RUNNING, NO_DEVICE_SELECTED, NOT_A_FLUTTER_PROJECT_MESSAGE
 from .env import Env
 from .process import run_process
+from .panel import append_to_output_panel
 
 import sublime
 
 
 class CurrentProject:
-    def __init__(self, window: sublime.Window, env: Env, daemon_client: FlutterDaemonClient):
+    def __init__(self, window: sublime.Window, env: Env, daemon_client: FlutterRpcClient):
         self.target_device = None # type: str | None
 
         self.__window = window
@@ -26,6 +30,9 @@ class CurrentProject:
         self.__is_pubspec_invalid = True
         self.__is_flutter_project = False
         self.__env = env
+        self.__command_process = None # type: subprocess.Popen | None
+        # Client for interacting with 'flutter run --machine'
+        self.__run_daemon_client = None # type: FlutterRpcClient | None
 
 
     @property
@@ -52,21 +59,33 @@ class CurrentProject:
 
 
     def pub_get(self):
-        self.__start_process(["pub", "get"])
+        self.__start_process_thread(["pub", "get"])
 
 
     def clean(self):
         if self.__is_flutter_project:
-            self.__start_process(["clean"])
+            self.__start_process_thread(["clean"])
         else:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
 
 
-    def hot_reload(self, is_manual: bool):
+    async def stop_app(self):
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
         elif self.__is_running and (app_id := self.__running_app_id):
-            self.__daemon_client.app.restart(
+            await self.__daemon_client.app.stop_app(app_id)
+        elif p := self.__command_process:
+            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+            destroy_output_panel(self.__window)
+        else:
+            sublime.error_message(APP_NOT_RUNNING)
+
+
+    async def hot_reload(self, is_manual: bool):
+        if not self.__is_flutter_project:
+            sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
+        elif self.__is_running and (app_id := self.__running_app_id):
+            await self.__daemon_client.app.restart(
                 app_id,
                 is_manual=is_manual,
                 full_restart=False,
@@ -75,11 +94,11 @@ class CurrentProject:
             sublime.error_message(APP_NOT_RUNNING)
 
 
-    def restart(self):
+    async def restart(self):
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
         elif self.__is_running and (app_id := self.__running_app_id):
-            self.__daemon_client.app.restart(
+            await self.__daemon_client.app.restart(
                 app_id,
                 is_manual=True,
                 full_restart=True,
@@ -89,12 +108,12 @@ class CurrentProject:
 
 
     def pub_add(self, package_name):
-        self.__start_process(["pub", "add", package_name])
+        self.__start_process_thread(["pub", "add", package_name])
 
 
-    def run(self):
+    def run(self, args: List[str]):
         if self.target_device and self.__is_flutter_project:
-            self.__start_process(["run", "-d", self.target_device])
+            self.__start_process_thread(["run", "-d", self.target_device] + args)
         else:
             sublime.error_message(NO_DEVICE_SELECTED)
 
@@ -122,13 +141,13 @@ class CurrentProject:
             self.__is_running = True
 
 
-    def __start_process(self, command):
+    def __start_process_thread(self, command: List[str]):
         panel = create_output_panel(self.__window)
 
         show_output_panel(self.__window)
 
         Thread(
-            target=run_process,
+            target=self.__run_process,
             args=(
                 [
                     self.__env.flutter_path
@@ -140,3 +159,21 @@ class CurrentProject:
                 panel,
             ),
         ).start()
+
+
+    def __run_process(self, command: List[str], cwd: str, output_panel: sublime.View):
+        process = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            cwd=cwd,
+            bufsize=1,
+            start_new_session=True,
+        )
+
+        self.__command_process = process
+
+        out = process.stdout
+        if out:
+            for line in iter(out.readline, b""):
+                append_to_output_panel(output_panel, line)

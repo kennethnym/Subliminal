@@ -29,6 +29,7 @@ class AppDomain(Domain):
 
     # app domain commands
     __restart = dot(nsp, "restart")
+    __stop = dot(nsp, "stop")
 
     _event_constructor_map = {
         start: AppStartEvent,
@@ -36,8 +37,16 @@ class AppDomain(Domain):
     }
 
 
+    def stop_app(self, app_id: str):
+        return super().make_request(Request(
+            method=self.__stop,
+            has_response=True,
+            appId=app_id,
+        ))
+
+
     def restart(self, app_id: str, is_manual: bool, full_restart: bool = False):
-        super().make_request(Request(
+        return super().make_request(Request(
             method=self.__restart,
             has_response=True,
             appId=app_id,

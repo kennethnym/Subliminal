@@ -12,6 +12,21 @@ and **does not** provide syntax/autocompletion support.
     - If you have per-project settings, define them in the project settings file instead.
 3. Install this plugin through Package Control.
 
+## Integration with Sublime Text's build system.
+
+This plugin allows Dart/Flutter projects to be run through Sublime Text's build system.
+
+### Flutter projects
+
+To create a build system for Flutter projects, Go to `Tools -> Build system -> New build system...`. A new file will be created. Name it `flutter.sublime-build`, then add the following:
+
+```json
+{
+    "target": "flutter_run",
+    "as": ""
+}
+```
+
 ## To-do
 
 - [ ] Dart/Flutter commands

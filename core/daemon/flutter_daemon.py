@@ -1,31 +1,42 @@
+import asyncio
 import subprocess
 import json
 from threading import Thread
-from typing import Any, Callable, IO, Dict
+from typing import Any, Callable, IO, Dict, List
 
 from .api.request import Request
 
 
 DaemonData = Dict[str, Any]
 DaemonDataListener = Callable[[DaemonData], None]
+DaemonOutputListener = Callable[[str], None]
 
-class FlutterDaemon(object):
-    def __init__(self, flutter_path: str) -> None:
+class FlutterRpcProcess(object):
+    def __init__(self, cmd: List[str], loop: asyncio.AbstractEventLoop) -> None:
         super().__init__()
-        self.__flutter_path = flutter_path # type: str
         self.__daemon_stdin = None # type: IO[bytes] | None
         self.__listeners = []      # type: list[DaemonDataListener]
+        self.__output_listeners = [] # type: list[DaemonOutputListener]
         self.__is_started = False  # type: bool
         self.__process = None      # type: subprocess.Popen | None
+        self.__event_loop = loop
+        self.__cmd = cmd
 
- 
+
     @property
     def is_started(self):
         return self.__is_started
     
 
     def listen(self, listener: DaemonDataListener):
+        '''Adds a listener that is called when the daemon has output a JSON RPC message.
+        The message will be passed to the listener as a dictionary.'''
         self.__listeners.append(listener)
+
+
+    def on_output(self, listener: DaemonOutputListener):
+        '''Adds a listener that is called when the daemon has output a human readable text rather than JSON RPC messages.'''
+        self.__output_listeners.append(listener)
 
 
     def start(self):
@@ -35,9 +46,10 @@ class FlutterDaemon(object):
 
 
     def terminate(self):
-        p = self.__process
-        if p:
+        if p := self.__process:
             p.terminate()
+        if loop := self.__event_loop:
+            loop.close()
 
 
     def make_request(self, request: Request):
@@ -54,9 +66,10 @@ class FlutterDaemon(object):
 
 
     def __start_daemon(self):
-        print('starting daemon...')
+        asyncio.set_event_loop(self.__event_loop)
+
         process = subprocess.Popen(
-            [self.__flutter_path, "daemon"],
+            self.__cmd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -70,7 +83,6 @@ class FlutterDaemon(object):
         if out:
             for line in iter(out.readline, b""):
                 j = str(line, encoding='utf8')
-                print('DAEMON: ' + j, end='')
                 try:
                     self.__on_message(json.loads((j.strip())[1:-1]))
                 except ValueError as e:
