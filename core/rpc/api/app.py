@@ -17,6 +17,12 @@ class AppStartedEvent:
         self.app_id = appId
 
 
+class AppRestartResponse:
+    def __init__(self, code: int, message: str) -> None:
+        self.code = code
+        self.message = message
+
+
 class AppDomain(Domain):
     nsp = "app"
 
@@ -36,6 +42,11 @@ class AppDomain(Domain):
     _event_constructor_map = {
         start: AppStartEvent,
         started: AppStartedEvent
+    }
+
+
+    _response_constructor_map = {
+        __restart: AppRestartResponse,
     }
 
 

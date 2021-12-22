@@ -22,10 +22,20 @@ To create a build system for Flutter projects, Go to `Tools -> Build system -> N
 
 ```json
 {
+    "name": "<a name for this build system>"
+    "selector": "source.dart"
     "target": "flutter_run",
-    "as": ""
+    "cancel": {
+        "kill": true,
+    },
+    // additional arguments passed to 'flutter run' as a list of strings
+    "args": ["--arg1", "--arg2"],
 }
 ```
+
+### Per-project build system
+
+To have different configurations for different Sublime Text projects, add
 
 ## To-do
 

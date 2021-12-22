@@ -98,24 +98,34 @@ class CurrentProject:
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
         elif self.__is_running and (app_id := self.__running_app_id) and (rpc := self.__flutter_run_rpc_client):
+            active_view = self.__window.active_view()
+            if active_view:
+                active_view.set_status("z_hot_reload_status", "Hot reloading...")
             await rpc.app.restart(
                 app_id,
                 is_manual=is_manual,
                 full_restart=False,
             )
+            if active_view:
+                active_view.erase_status("z_hot_reload_status")
         else:
             sublime.error_message(APP_NOT_RUNNING)
 
 
-    async def restart(self):
+    async def hot_restart(self):
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
         elif self.__is_running and (app_id := self.__running_app_id) and (rpc := self.__flutter_run_rpc_client):
+            active_view = self.__window.active_view()
+            if active_view:
+                active_view.set_status("z_hot_restart_status", "Hot restarting...")
             await rpc.app.restart(
                 app_id,
                 is_manual=True,
                 full_restart=True,
             )
+            if active_view:
+                active_view.erase_status("z_hot_restart_status")
         else:
             sublime.error_message(APP_NOT_RUNNING)
 
@@ -126,7 +136,7 @@ class CurrentProject:
 
     def run(self, args: List[str]):
         if self.target_device and self.__is_flutter_project:
-            self.__start_rpc_process([self.__env.flutter_path, "run", "--machine", "-d", self.target_device])
+            self.__start_rpc_process([self.__env.flutter_path, "run", "--machine", "-d", self.target_device] + args)
         else:
             sublime.error_message(NO_DEVICE_SELECTED)
 

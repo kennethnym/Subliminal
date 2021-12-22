@@ -61,7 +61,6 @@ class DeviceDomain(Domain):
 
 
     async def get_devices(self):
-        print('waiting')
         devices = await super().make_request(Request(
             method=self.__get_devices,
             has_response=True,

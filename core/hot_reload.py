@@ -1,3 +1,4 @@
+import asyncio
 import sublime
 import sublime_plugin
 
@@ -15,5 +16,5 @@ class FileChangeListener(sublime_plugin.ViewEventListener):
 
 
     def on_post_save_async(self):
-        if (window := self.view.window()) and (wm := get_window_manager(window)):
-            wm.project.hot_reload(is_manual=False)
+        if (window := self.view.window()) and (wm := get_window_manager(window)) and wm.project.is_running:
+            asyncio.run_coroutine_threadsafe(wm.project.hot_reload(is_manual=False), wm.event_loop)

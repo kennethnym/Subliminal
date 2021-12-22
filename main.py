@@ -3,6 +3,7 @@ from threading import Thread
 from typing import List
 from .core.window_manager import WindowManager, get_window_manager, ignore_window, unignore_window, unload_window_manager, unload_window_managers
 from .core.constants import PUBSPEC_YAML_FILE_NAME
+from .core.hot_reload import FileChangeListener
 from .commands import *
 
 import sublime

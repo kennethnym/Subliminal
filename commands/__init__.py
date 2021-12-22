@@ -2,6 +2,8 @@ from .flutter_clean_command import FlutterCleanCommand
 from .flutter_run_command import FlutterRunCommand
 from .flutter_stop_app_command import FlutterStopAppCommand
 from .flutter_select_device_command import FlutterSelectDeviceCommand
+from .flutter_hot_reload_command import FlutterHotReloadCommand
+from .flutter_hot_restart_command import FlutterHotRestartCommand
 from .pub_add_command import PubAddCommand
 from .pub_get_command import PubGetCommand
 from .test_command import SubliminalTestCommand
