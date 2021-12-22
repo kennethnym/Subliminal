@@ -4,10 +4,12 @@ from .utils import dot
 
 
 class AppStartEvent:
-    def __init__(self, appId: str, directory: str, deviceId: str) -> None:
+    def __init__(self, appId: str, directory: str, deviceId: str, supportsRestart: bool, launchMode: str) -> None:
         self.app_id = appId
         self.directory = directory
         self.device_id = deviceId
+        self.supports_restart = supportsRestart
+        self.launch_mode = launchMode
 
 
 class AppStartedEvent:

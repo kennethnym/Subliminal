@@ -1,4 +1,6 @@
 import asyncio
+import os
+import signal
 import subprocess
 import json
 from threading import Thread
@@ -12,7 +14,7 @@ DaemonDataListener = Callable[[DaemonData], None]
 DaemonOutputListener = Callable[[str], None]
 
 class FlutterRpcProcess(object):
-    def __init__(self, cmd: List[str], loop: asyncio.AbstractEventLoop) -> None:
+    def __init__(self, cmd: List[str], loop: asyncio.AbstractEventLoop, cwd: str = None) -> None:
         super().__init__()
         self.__daemon_stdin = None # type: IO[bytes] | None
         self.__listeners = []      # type: list[DaemonDataListener]
@@ -21,6 +23,7 @@ class FlutterRpcProcess(object):
         self.__process = None      # type: subprocess.Popen | None
         self.__event_loop = loop
         self.__cmd = cmd
+        self.__cwd = cwd
 
 
     @property
@@ -47,9 +50,7 @@ class FlutterRpcProcess(object):
 
     def terminate(self):
         if p := self.__process:
-            p.terminate()
-        if loop := self.__event_loop:
-            loop.close()
+            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
 
     def make_request(self, request: Request):
@@ -60,9 +61,14 @@ class FlutterRpcProcess(object):
             stdin.flush()
 
 
-    def __on_message(self, json: DaemonData):
+    def __on_rpc_message(self, json: DaemonData):
         for listener in self.__listeners:
             listener(json)
+
+
+    def __on_message(self, message: str):
+        for listener in self.__output_listeners:
+            listener(message)
 
 
     def __start_daemon(self):
@@ -70,10 +76,12 @@ class FlutterRpcProcess(object):
 
         process = subprocess.Popen(
             self.__cmd,
+            cwd=self.__cwd,
             stdout=subprocess.PIPE,
             stdin=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            bufsize=1
+            bufsize=1,
+            start_new_session=True,
         )
 
         self.__process = process
@@ -83,8 +91,9 @@ class FlutterRpcProcess(object):
         if out:
             for line in iter(out.readline, b""):
                 j = str(line, encoding='utf8')
+                print(f'DAEMON: {j}', end='')
                 try:
-                    self.__on_message(json.loads((j.strip())[1:-1]))
+                    self.__on_rpc_message(json.loads((j.strip())[1:-1]))
                 except ValueError as e:
-                    print(e)
+                    self.__on_message(j)
                     continue

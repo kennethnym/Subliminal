@@ -1,5 +1,6 @@
 from .flutter_clean_command import FlutterCleanCommand
 from .flutter_run_command import FlutterRunCommand
+from .flutter_stop_app_command import FlutterStopAppCommand
 from .flutter_select_device_command import FlutterSelectDeviceCommand
 from .pub_add_command import PubAddCommand
 from .pub_get_command import PubGetCommand

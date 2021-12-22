@@ -4,6 +4,8 @@ import sublime
 
 _PLUGIN_OUTPUT_PANEL_NAME = "dart"
 
+PROJECT_RUN_OUTPUT_PANEL_NAME = "dart.run_project"
+
 # borrowed from Sublime-LSP's panel settings
 # https://github.com/sublimelsp/LSP/blob/main/plugin/core/panels.py
 _OUTPUT_PANEL_SETTINGS = {
@@ -26,8 +28,8 @@ _OUTPUT_PANEL_SETTINGS = {
 }
 
 
-def create_output_panel(window: sublime.Window):
-    panel = window.create_output_panel(_PLUGIN_OUTPUT_PANEL_NAME)
+def create_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANEL_NAME):
+    panel = window.create_output_panel(name)
     settings = panel.settings()
 
     for k, v in _OUTPUT_PANEL_SETTINGS.items():
@@ -36,19 +38,19 @@ def create_output_panel(window: sublime.Window):
     return panel
 
 
-def show_output_panel(window: sublime.Window):
+def show_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANEL_NAME):
     window.run_command(
-        "show_panel", {"panel": "output.{}".format(_PLUGIN_OUTPUT_PANEL_NAME)}
+        "show_panel", {"panel": f"output.{name}"}
     )
 
 
-def destroy_output_panel(window: sublime.Window):
-    window.destroy_output_panel(_PLUGIN_OUTPUT_PANEL_NAME)
+def destroy_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANEL_NAME):
+    window.destroy_output_panel(name)
 
 
-def append_to_output_panel(panel: sublime.View, line: bytes):
+def append_to_output_panel(panel: sublime.View, line: str):
     panel.set_read_only(False)
     panel.run_command("append", {
-        "characters": str(line, encoding="utf8")
+        "characters": line
     })
     panel.set_read_only(True)

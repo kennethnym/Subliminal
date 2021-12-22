@@ -1,5 +1,6 @@
 [
 	{ "caption": "Flutter: Run", "command": "flutter_run" },
+	{ "caption": "Flutter: Stop running app", "command": "flutter_stop_app" },
 	{ "caption": "Flutter: Clean", "command": "flutter_clean" },
 	{ "caption": "Flutter: Select a device...", "command": "flutter_select_device" },
 	{ "caption": "Pub: Add a package", "command": "pub_add" },

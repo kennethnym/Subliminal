@@ -3,9 +3,9 @@ import os
 from threading import Thread
 from typing import Dict, Set
 
-from .daemon.api.daemon import DaemonConnectedEvent
+from .rpc.api.daemon import DaemonConnectedEvent
 from .project import CurrentProject
-from .daemon import FlutterRpcProcess, FlutterRpcClient
+from .rpc import FlutterRpcProcess, FlutterRpcClient
 from .env import Env
 
 import sublime
@@ -26,7 +26,7 @@ class WindowManager:
             self.__event_loop = loop
             self.__daemon = FlutterRpcProcess([env.flutter_path, "daemon"], loop)
             self.__daemon_client = FlutterRpcClient(self.__daemon)
-            self.__project = CurrentProject(window, env, self.__daemon_client)
+            self.__project = CurrentProject(window, env, self.__daemon_client, loop)
         else:
             sublime.error_message('Unable to determine the path to the Flutter SDK. Please define "FLUTTER_ROOT" under the "env" key in LSP-Dart settings.')
 

@@ -1,13 +1,14 @@
+import asyncio
 import os
 import signal
 import subprocess
 from threading import Thread
 from typing import List
 
-from .daemon.flutter_daemon_client import FlutterRpcClient
-from .daemon.api.device import DeviceAddedEvent, DeviceRemovedEvent, Device
-from .daemon.api.app import AppStartEvent, AppStartedEvent
-from .panel import create_output_panel, destroy_output_panel, show_output_panel
+from .rpc import FlutterRpcClient, FlutterRpcProcess
+from .rpc.api.device import DeviceAddedEvent, DeviceRemovedEvent, Device
+from .rpc.api.app import AppStartEvent, AppStartedEvent
+from .panel import PROJECT_RUN_OUTPUT_PANEL_NAME, create_output_panel, destroy_output_panel, show_output_panel
 from .messages import APP_NOT_RUNNING, NO_DEVICE_SELECTED, NOT_A_FLUTTER_PROJECT_MESSAGE
 from .env import Env
 from .process import run_process
@@ -17,22 +18,24 @@ import sublime
 
 
 class CurrentProject:
-    def __init__(self, window: sublime.Window, env: Env, daemon_client: FlutterRpcClient):
+    def __init__(self, window: sublime.Window, env: Env, rpc_client: FlutterRpcClient, loop: asyncio.AbstractEventLoop):
         self.target_device = None # type: str | None
 
         self.__window = window
         self.__path = window.folders()[0]
         self.__pubspec = {}
         self.__availble_devices = {} # type: dict[str, Device]
-        self.__daemon_client = daemon_client
+        self.__daemon_rpc_client = rpc_client
         self.__is_running = False
         self.__running_app_id = None # type: str | None
+        self.__loop = loop
         self.__is_pubspec_invalid = True
         self.__is_flutter_project = False
         self.__env = env
         self.__command_process = None # type: subprocess.Popen | None
         # Client for interacting with 'flutter run --machine'
-        self.__run_daemon_client = None # type: FlutterRpcClient | None
+        self.__flutter_run_rpc_process = None # type: FlutterRpcProcess | None
+        self.__flutter_run_rpc_client = None # type: FlutterRpcClient | None
 
 
     @property
@@ -50,12 +53,17 @@ class CurrentProject:
         return bool(self.__availble_devices)
 
 
+    @property
+    def is_running(self):
+        return bool(self.__running_app_id)
+
+
     async def initialize(self):
         self.__load_pubspec()
-        devices = await self.__daemon_client.device.get_devices()
+        devices = await self.__daemon_rpc_client.device.get_devices()
         for device in devices:
             self.__availble_devices[device.id] = device
-        self.__daemon_client.add_event_listener(self.__daemon_event_listener)
+        self.__daemon_rpc_client.add_event_listener(self.__daemon_event_listener)
 
 
     def pub_get(self):
@@ -72,8 +80,13 @@ class CurrentProject:
     async def stop_app(self):
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
-        elif self.__is_running and (app_id := self.__running_app_id):
-            await self.__daemon_client.app.stop_app(app_id)
+        elif app_id := self.__running_app_id:
+            if self.__is_running and (rpc := self.__flutter_run_rpc_client):
+                await rpc.app.stop_app(app_id)
+            elif rpc_process := self.__flutter_run_rpc_process:
+                rpc_process.terminate()
+                self.__flutter_run_rpc_process = None
+            destroy_output_panel(self.__window, name=PROJECT_RUN_OUTPUT_PANEL_NAME)
         elif p := self.__command_process:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
             destroy_output_panel(self.__window)
@@ -84,8 +97,8 @@ class CurrentProject:
     async def hot_reload(self, is_manual: bool):
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
-        elif self.__is_running and (app_id := self.__running_app_id):
-            await self.__daemon_client.app.restart(
+        elif self.__is_running and (app_id := self.__running_app_id) and (rpc := self.__flutter_run_rpc_client):
+            await rpc.app.restart(
                 app_id,
                 is_manual=is_manual,
                 full_restart=False,
@@ -97,8 +110,8 @@ class CurrentProject:
     async def restart(self):
         if not self.__is_flutter_project:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
-        elif self.__is_running and (app_id := self.__running_app_id):
-            await self.__daemon_client.app.restart(
+        elif self.__is_running and (app_id := self.__running_app_id) and (rpc := self.__flutter_run_rpc_client):
+            await rpc.app.restart(
                 app_id,
                 is_manual=True,
                 full_restart=True,
@@ -113,7 +126,7 @@ class CurrentProject:
 
     def run(self, args: List[str]):
         if self.target_device and self.__is_flutter_project:
-            self.__start_process_thread(["run", "-d", self.target_device] + args)
+            self.__start_rpc_process([self.__env.flutter_path, "run", "--machine", "-d", self.target_device])
         else:
             sublime.error_message(NO_DEVICE_SELECTED)
 
@@ -135,7 +148,10 @@ class CurrentProject:
             self.__availble_devices[event.device.id] = event.device
         elif isinstance(event, DeviceRemovedEvent):
             self.__availble_devices.pop(event.device.id)
-        elif isinstance(event, AppStartEvent):
+
+
+    def __flutter_run_rpc_event_listener(self, event):
+        if isinstance(event, AppStartEvent):
             self.__running_app_id = event.app_id
         elif isinstance(event, AppStartedEvent):
             self.__is_running = True
@@ -143,7 +159,6 @@ class CurrentProject:
 
     def __start_process_thread(self, command: List[str]):
         panel = create_output_panel(self.__window)
-
         show_output_panel(self.__window)
 
         Thread(
@@ -161,7 +176,20 @@ class CurrentProject:
         ).start()
 
 
-    def __run_process(self, command: List[str], cwd: str, output_panel: sublime.View):
+    def __start_rpc_process(self, command: List[str]):
+        panel = create_output_panel(self.__window, name=PROJECT_RUN_OUTPUT_PANEL_NAME)
+        process = FlutterRpcProcess(command, self.__loop, cwd=self.__path)
+        process.on_output(lambda message: append_to_output_panel(panel, message))
+        rpc_client = FlutterRpcClient(process)
+        rpc_client.add_event_listener(self.__flutter_run_rpc_event_listener)
+        self.__flutter_run_rpc_process = process
+        self.__flutter_run_rpc_client = rpc_client
+
+        show_output_panel(self.__window, name=PROJECT_RUN_OUTPUT_PANEL_NAME)
+        process.start()
+
+
+    def __run_process(self, command: List[str], cwd: str, panel: sublime.View):
         process = subprocess.Popen(
             command,
             stdout=subprocess.PIPE,
@@ -173,7 +201,6 @@ class CurrentProject:
 
         self.__command_process = process
 
-        out = process.stdout
-        if out:
+        if out := process.stdout:
             for line in iter(out.readline, b""):
-                append_to_output_panel(output_panel, line)
+                append_to_output_panel(panel, str(line, encoding="utf8"))

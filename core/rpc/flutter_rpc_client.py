@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict
 
-from .flutter_daemon import DaemonData, FlutterRpcProcess
+from .flutter_rpc import DaemonData, FlutterRpcProcess
 from .api.app import AppDomain
 from .api.device import DeviceDomain
 from .api.daemon import DaemonDomain
@@ -13,15 +13,16 @@ class FlutterRpcClient:
     __event_json_parser: Dict[str, Callable[[DaemonData], Any]] = {
         DaemonDomain.nsp: DaemonDomain.parse_event,
         DeviceDomain.nsp: DeviceDomain.parse_event,
+        AppDomain.nsp: AppDomain.parse_event,
     }
 
-    def __init__(self, daemon: FlutterRpcProcess) -> None:
-        self.__daemon_domain = DaemonDomain(daemon)
-        self.__device_domain = DeviceDomain(daemon)
-        self.__app_domain = AppDomain(daemon)
+    def __init__(self, process: FlutterRpcProcess) -> None:
+        self.__daemon_domain = DaemonDomain(process)
+        self.__device_domain = DeviceDomain(process)
+        self.__app_domain = AppDomain(process)
         self.__event_listeners = [] # type: list[DaemonEventListener]
 
-        daemon.listen(self.__daemon_listener)
+        process.listen(self.__daemon_listener)
 
 
     @property

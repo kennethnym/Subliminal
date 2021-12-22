@@ -27,5 +27,5 @@ class Request:
     def serialize(self):
         j = {"method": self.__method, "id": self.__id}
         if self.__args:
-            j.update(self.__args)
+            j["params"] = self.__args
         return json.dumps([j])

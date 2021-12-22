@@ -1,7 +1,7 @@
 import asyncio
 
 from .request import Request
-from ..flutter_daemon import FlutterRpcProcess
+from ..flutter_rpc import FlutterRpcProcess
 
 class Domain:
     _event_constructor_map = {}
