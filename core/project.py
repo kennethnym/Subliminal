@@ -3,7 +3,7 @@ import os
 import signal
 import subprocess
 from threading import Thread
-from typing import List
+from typing import List, Union
 
 from .rpc import FlutterRpcClient, FlutterRpcProcess
 from .rpc.api.device import DeviceAddedEvent, DeviceRemovedEvent, Device
@@ -19,7 +19,7 @@ import sublime
 
 class CurrentProject:
     def __init__(self, window: sublime.Window, env: Env, rpc_client: FlutterRpcClient, loop: asyncio.AbstractEventLoop):
-        self.target_device = None # type: str | None
+        self.__target_device = None # type: str | None
 
         self.__window = window
         self.__path = window.folders()[0]
@@ -56,6 +56,22 @@ class CurrentProject:
     @property
     def is_running(self):
         return bool(self.__running_app_id)
+
+
+    @property
+    def target_device(self):
+        return self.__target_device
+
+
+    @target_device.setter
+    def target_device(self, value: Union[str, None]):
+        self.__target_device = value
+        if view := self.__window.active_view():
+            if value:
+                device = self.__availble_devices[value]
+                view.set_status("a_selected_device", f"Selected device: {device.name}")
+            else:
+                view.erase_status("a_selected_device")            
 
 
     async def initialize(self):
