@@ -40,7 +40,7 @@ To create a build system for Flutter projects, Go to `Tools -> Build system -> N
     - [x] `pub add`
     - [x] `fluter clean`
     - [x] `flutter run`
-- [ ] Hot reload/Restart
+- [x] Hot reload/Restart
 - [ ] Open ios/android folder in Xcode/Android Studio
-- [ ] Select device
-- [ ] Add dependency
+- [x] Select device
+- [x] Add dependency
