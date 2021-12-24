@@ -6,4 +6,5 @@ from .flutter_hot_reload_command import FlutterHotReloadCommand
 from .flutter_hot_restart_command import FlutterHotRestartCommand
 from .pub_add_command import PubAddCommand
 from .pub_get_command import PubGetCommand
+from .dart_run_command import DartRunCommand
 from .test_command import SubliminalTestCommand

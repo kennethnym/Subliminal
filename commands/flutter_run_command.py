@@ -6,10 +6,14 @@ from .dart_command import DartCommand
 
 
 class FlutterRunCommand(DartCommand):
+    def is_enabled(self):
+        return (project := self.project()) and project.is_flutter_project
+
+
     def run(self, device: str = None, args: List[str] = [], kill: bool = False):
-        if (project := super().project()):
+        if (project := self.project()):
             if kill:
-                asyncio.run_coroutine_threadsafe(project.stop_app(), self.window_manager.event_loop)
+                asyncio.run_coroutine_threadsafe(project.stop_running(), self.window_manager.event_loop)
             else:
                 if device:
                     project.target_device = device
@@ -17,6 +21,6 @@ class FlutterRunCommand(DartCommand):
 
 
     def input(self, _):
-        project = super().project()
+        project = self.project()
         if project and not project.target_device:
             return DeviceListInputHandler(project)

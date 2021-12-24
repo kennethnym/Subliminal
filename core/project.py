@@ -9,7 +9,7 @@ from .rpc import FlutterRpcClient, FlutterRpcProcess
 from .rpc.api.device import DeviceAddedEvent, DeviceRemovedEvent, Device
 from .rpc.api.app import AppStartEvent, AppStartedEvent
 from .panel import PROJECT_RUN_OUTPUT_PANEL_NAME, create_output_panel, destroy_output_panel, show_output_panel
-from .messages import APP_NOT_RUNNING, NO_DEVICE_SELECTED, NOT_A_FLUTTER_PROJECT_MESSAGE
+from .messages import PROJECT_NOT_RUNNING, NO_DEVICE_SELECTED, NOT_A_FLUTTER_PROJECT_MESSAGE
 from .env import Env
 from .process import run_process
 from .panel import append_to_output_panel
@@ -63,6 +63,11 @@ class CurrentProject:
         return self.__target_device
 
 
+    @property
+    def is_flutter_project(self):
+        return self.__is_flutter_project    
+
+
     @target_device.setter
     def target_device(self, value: Union[str, None]):
         self.__target_device = value
@@ -93,21 +98,21 @@ class CurrentProject:
             sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
 
 
-    async def stop_app(self):
-        if not self.__is_flutter_project:
-            sublime.error_message(NOT_A_FLUTTER_PROJECT_MESSAGE)
-        elif app_id := self.__running_app_id:
-            if self.__is_running and (rpc := self.__flutter_run_rpc_client):
-                await rpc.app.stop_app(app_id)
-            elif rpc_process := self.__flutter_run_rpc_process:
-                rpc_process.terminate()
-                self.__flutter_run_rpc_process = None
-            destroy_output_panel(self.__window, name=PROJECT_RUN_OUTPUT_PANEL_NAME)
-        elif p := self.__command_process:
+    async def stop_running(self):
+        if p := self.__command_process:
             os.killpg(os.getpgid(p.pid), signal.SIGTERM)
             destroy_output_panel(self.__window)
+        elif self.__is_flutter_project and (app_id := self.__running_app_id):
+            if self.__is_running and (rpc := self.__flutter_run_rpc_client):
+                    # the app is running on the device
+                    await rpc.app.stop_app(app_id)
+            elif rpc_process := self.__flutter_run_rpc_process:
+                # flutter run is triggered, build is running, but app is not running on the device
+                rpc_process.terminate()
+                self.__flutter_run_rpc_process = None
+            destroy_output_panel(self.__window, name=PROJECT_RUN_OUTPUT_PANEL_NAME)    
         else:
-            sublime.error_message(APP_NOT_RUNNING)
+            sublime.error_message(PROJECT_NOT_RUNNING)
 
 
     async def hot_reload(self, is_manual: bool):
@@ -125,7 +130,7 @@ class CurrentProject:
             if active_view:
                 active_view.erase_status("z_hot_reload_status")
         else:
-            sublime.error_message(APP_NOT_RUNNING)
+            sublime.error_message(PROJECT_NOT_RUNNING)
 
 
     async def hot_restart(self):
@@ -143,7 +148,7 @@ class CurrentProject:
             if active_view:
                 active_view.erase_status("z_hot_restart_status")
         else:
-            sublime.error_message(APP_NOT_RUNNING)
+            sublime.error_message(PROJECT_NOT_RUNNING)
 
 
     def pub_add(self, package_name):
@@ -151,10 +156,13 @@ class CurrentProject:
 
 
     def run(self, args: List[str]):
-        if self.target_device and self.__is_flutter_project:
-            self.__start_rpc_process([self.__env.flutter_path, "run", "--machine", "-d", self.target_device] + args)
+        if self.__is_flutter_project:
+            if device := self.target_device:
+                self.__start_rpc_process([self.__env.flutter_path, "run", "--machine", "-d", device] + args)
+            else:
+                sublime.error_message(NO_DEVICE_SELECTED)
         else:
-            sublime.error_message(NO_DEVICE_SELECTED)
+            self.__start_process_thread(["run"])
 
 
     def has_dependency_on(self, dep):

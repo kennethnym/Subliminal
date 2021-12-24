@@ -8,6 +8,6 @@ NO_DEVICE_SELECTED = "No device selected. Please select a device to run the proj
 
 NO_AVAILABLE_DEVICES = "No available devices."
 
-APP_NOT_RUNNING = "The app is not running right now."
+PROJECT_NOT_RUNNING = "The app is not running right now."
 
 COMMAND_UNAVAILABLE = "Command not available."

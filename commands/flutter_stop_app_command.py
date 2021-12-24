@@ -10,4 +10,4 @@ class FlutterStopAppCommand(DartCommand):
 
     def run(self):
         if project := super().project():
-            asyncio.run_coroutine_threadsafe(project.stop_app(), self.window_manager.event_loop)
+            asyncio.run_coroutine_threadsafe(project.stop_running(), self.window_manager.event_loop)
