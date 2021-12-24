@@ -84,6 +84,6 @@ to the list under the `"build_systems"` key, in the `<project-name>.sublime-proj
     - [x] `flutter run`
     - [x] `dart run`
 - [x] Hot reload/Restart
-- [ ] Open ios/android folder in Xcode/Android Studio
+- [x] Open ios/android folder in Xcode/Android Studio
 - [x] Select device
 - [x] Add dependency

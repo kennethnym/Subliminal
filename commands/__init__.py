@@ -8,3 +8,7 @@ from .pub_add_command import PubAddCommand
 from .pub_get_command import PubGetCommand
 from .dart_run_command import DartRunCommand
 from .test_command import SubliminalTestCommand
+
+# sidebar context menu commands
+from .open_in_xcode_command import OpenInXcodeCommand
+from .open_in_android_studio_command import OpenInAndroidStudioCommand

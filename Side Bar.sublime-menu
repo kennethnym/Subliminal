@@ -1,0 +1,12 @@
+[
+	{
+		"caption": "Open in XCode…",
+		"command": "open_in_xcode",
+		"args": {"dirs": []}
+	},
+	{
+		"caption": "Open in Android Studio…",
+		"command": "open_in_android_studio",
+		"args": {"dirs": []}
+	}
+]

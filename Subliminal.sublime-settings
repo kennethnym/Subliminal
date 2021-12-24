@@ -1,0 +1,10 @@
+{
+	// The path to the Android Studio executable.
+	// 
+	// Default:
+	//   - Windows: C:\Program Files\Android\Android Studio\bin\studio64.exe
+	//   - Linux:   /usr/local/android-studio/bin/studio.sh
+	//   - MacOS:   The plugin should be able to locate Android Studio automatically, so this settings is not needed.
+	//              If not, this should be the path to the .app file.
+	"android_studio_path": ""
+}

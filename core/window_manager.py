@@ -3,6 +3,7 @@ import os
 from threading import Thread
 from typing import Dict, Set
 
+from .plugin_settings import PluginSettings
 from .rpc.api.daemon import DaemonConnectedEvent
 from .project import CurrentProject
 from .rpc import FlutterRpcProcess, FlutterRpcClient
@@ -16,6 +17,9 @@ class WindowManager:
         super().__init__()
     
         env_dict = sublime.load_settings("LSP-Dart.sublime-settings").get("env", dict(os.environ))
+        settings = sublime.load_settings("Subliminal.sublime-settings").to_dict()
+
+        self.__plugin_settings = PluginSettings(**settings)
 
         if "FLUTTER_ROOT" in env_dict:
             env = Env.from_dict(env_dict)
@@ -39,6 +43,11 @@ class WindowManager:
     @property
     def event_loop(self):
         return self.__event_loop
+
+
+    @property
+    def plugin_settings(self):
+        return self.__plugin_settings
 
 
     def start_daemon(self):
