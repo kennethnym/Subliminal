@@ -16,9 +16,26 @@ and **does not** provide syntax/autocompletion support.
 
 This plugin allows Dart/Flutter projects to be run through Sublime Text's build system.
 
-### Flutter projects
+### Running Dart projects
 
-To create a build system for Flutter projects, Go to `Tools -> Build system -> New build system...`. A new file will be created. Name it `flutter.sublime-build`, then add the following:
+To create a build system for running Dart projects, go to `Tools -> Build system -> New build system...`. A new file will be created. Name it `dart.sublime-build`, then add the following:
+
+```json
+{
+    "name": "<a name for this build system>",
+    "selector": "source.dart",
+    "target": "dart_run",
+    "cancel": {
+        "kill": true,
+    },
+    // additional arguments passed to 'flutter run' as a list of strings
+    "args": ["--arg1", "--arg2"],
+}
+```
+
+### Running Flutter projects
+
+To create a build system for running Flutter projects, go to `Tools -> Build system -> New build system...`. A new file will be created. Name it `flutter.sublime-build`, then add the following:
 
 ```json
 {
@@ -30,6 +47,31 @@ To create a build system for Flutter projects, Go to `Tools -> Build system -> N
     },
     // additional arguments passed to 'flutter run' as a list of strings
     "args": ["--arg1", "--arg2"],
+}
+```
+
+### Per-project build system
+
+To have different build systems for different Sublime projects, instead of making a new build system through the menu, add the above JSON objects
+to the list under the `"build_systems"` key, in the `<project-name>.sublime-project` file:
+
+```json
+{
+    "folders": [/*...*/],
+    "build_systems":
+    [
+        /* Add build system JSON config here */
+        {
+            "name": "Run my project"
+            "selector": "source.dart"
+            "target": "flutter_run",
+            "cancel": {
+                "kill": true,
+            },
+            // additional arguments passed to 'flutter run' as a list of strings
+            "args": ["--no-sound-null-safety"],
+        }
+    ]
 }
 ```
 
