@@ -1,0 +1,16 @@
+{
+	"folders":
+	[
+		{
+			"path": ".",
+		}
+	],
+	"debugger_configurations":
+	[
+		{
+			"name": "Run",
+			"request": "launch",
+			"type": "dart"
+		}
+	],
+}
