@@ -8,9 +8,11 @@
 	"debugger_configurations":
 	[
 		{
-			"name": "Run",
+			"name": "Run | Find tests",
 			"request": "launch",
-			"type": "dart"
+			"type": "dart",
+			"program": "${workspaceFolder}/bin/ast_analyzer.dart",
+			"args": ["tests", "/home/kenneth/.config/sublime-text/Packages/Subliminal/core/ast_analyzer/test/ast_analyzer_test.dart"]
 		}
 	],
 }

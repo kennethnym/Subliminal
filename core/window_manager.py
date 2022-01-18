@@ -1,5 +1,6 @@
 import asyncio
 import os
+import subprocess
 from threading import Thread
 from typing import Dict, Set
 
@@ -25,6 +26,7 @@ class WindowManager:
             env = Env.from_dict(env_dict)
             loop = asyncio.new_event_loop()
 
+            self.__env = env
             self.__window = window
             self.__is_daemon_started = False
             self.__event_loop = loop
@@ -33,6 +35,11 @@ class WindowManager:
             self.__project = CurrentProject(window, env, self.__daemon_client, loop)
         else:
             sublime.error_message('Unable to determine the path to the Flutter SDK. Please define "FLUTTER_ROOT" under the "env" key in LSP-Dart settings.')
+
+
+    @property
+    def env(self):
+        return self.__env
 
 
     @property

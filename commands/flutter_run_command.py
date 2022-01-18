@@ -1,5 +1,4 @@
 import asyncio
-from threading import Thread
 from typing import List
 from .flutter_select_device_command import DeviceListInputHandler
 from .dart_command import DartCommand

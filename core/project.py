@@ -37,6 +37,10 @@ class CurrentProject:
         self.__flutter_run_rpc_process = None # type: FlutterRpcProcess | None
         self.__flutter_run_rpc_client = None # type: FlutterRpcClient | None
 
+    @property
+    def path(self):
+        return self.__path
+
 
     @property
     def window(self):

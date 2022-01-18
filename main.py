@@ -2,7 +2,7 @@ import os
 from threading import Thread
 from .core.window_manager import WindowManager, get_window_manager, ignore_window, unignore_window, unload_window_manager, unload_window_managers
 from .core.constants import PUBSPEC_YAML_FILE_NAME
-from .core.hot_reload import FileChangeListener
+from .core.file_analyzer import FileAnalyzer
 from .commands import *
 
 import sublime

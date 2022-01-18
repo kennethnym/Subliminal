@@ -7,6 +7,12 @@ class Env:
     def __init__(self, flutter_path: str, dart_path: str) -> None:
         self.flutter_path = flutter_path
         self.dart_path = dart_path
+        self.ast_analyzer_path = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            'ast_analyzer',
+            'bin',
+            'ast_analyzer.jit',
+        )
 
 
     @classmethod
