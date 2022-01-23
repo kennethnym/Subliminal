@@ -7,6 +7,7 @@ from .flutter_hot_restart_command import FlutterHotRestartCommand
 from .pub_add_command import PubAddCommand
 from .pub_get_command import PubGetCommand
 from .dart_run_command import DartRunCommand
+from .run_dart_tests_command import RunDartTestsCommand
 from .test_command import SubliminalTestCommand
 
 # sidebar context menu commands

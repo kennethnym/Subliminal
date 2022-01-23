@@ -1,14 +1,15 @@
-import 'package:analyzer/dart/analysis/features.dart';
+import 'dart:io';
+
 import 'package:analyzer/dart/analysis/utilities.dart';
 import 'package:analyzer/dart/ast/ast.dart';
 
 import 'target.dart';
 
-Iterable<Target> findTests({required String forFile}) {
-  final ast = parseFile(
-    path: forFile,
-    featureSet: FeatureSet.latestLanguageVersion(),
-  );
+Iterable<Target> findTests({String? inFile, String? inSource}) {
+  final source = inFile != null ? File(inFile).readAsStringSync() : inSource;
+  if (source == null) return [];
+
+  final ast = parseString(content: source);
 
   final mainBlock = ast.unit.declarations
       .whereType<FunctionDeclaration>()
@@ -18,10 +19,10 @@ Iterable<Target> findTests({required String forFile}) {
       .childEntities
       .firstWhere((child) => child is Block) as Block;
 
-  return _findTestNodes(mainBlock, forFile);
+  return _findTestNodes(mainBlock, inFile);
 }
 
-Iterable<Target> _findTestNodes(Block block, String file) {
+Iterable<Target> _findTestNodes(Block block, String? file) {
   final nodes = block.statements
       .whereType<ExpressionStatement>()
       .map((statement) => statement.expression)
@@ -31,9 +32,10 @@ Iterable<Target> _findTestNodes(Block block, String file) {
   return nodes
       .map((invocation) => Target(
             file: file,
-            offset: invocation.beginToken.charOffset,
+            offset: invocation.beginToken.offset,
             name: (invocation.argumentList.arguments.first as StringLiteral)
                 .stringValue!,
+            type: TargetType.test,
           ))
       .followedBy(nodes.fold(<Target>[], (arr, node) {
         final testBody = node.argumentList.arguments[1] as FunctionExpression;

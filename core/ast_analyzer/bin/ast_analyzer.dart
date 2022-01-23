@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:args/args.dart';
 import 'package:ast_analyzer/ast_analyzer.dart';
 import 'package:ast_analyzer/src/find_tests.dart';
 import 'package:ast_analyzer/src/target.dart';
@@ -21,22 +22,43 @@ enum _Target {
 ///     - tests: find where all the tests are
 ///   - file-path: full path to the file being analyzedd
 void main(List<String> arguments) {
+  final argParser = ArgParser()
+    ..addOption('type', allowed: ['main', 'tests'])
+    ..addOption('source', defaultsTo: null)
+    ..addOption('file', defaultsTo: null);
+
+  final args = argParser.parse(arguments);
+
   try {
-    final targetType = _Target.values.byName(arguments.first);
+    final targetType = _Target.values.byName(args['type']);
     final targets = <Target>[];
     switch (targetType) {
       case _Target.main:
-        final target = findMain(forFile: arguments[1]);
-        if (target != null) {
-          targets.add(target);
+        if (args['file'] != null) {
+          final target = findMain(inFile: args['file']);
+          if (target != null) {
+            targets.add(target);
+          }
+        } else if (args['source'] != null) {
+          final target = findMain(inSource: args['source']);
+          if (target != null) {
+            targets.add(target);
+          }
         }
+
         break;
 
       case _Target.tests:
-        targets.addAll(findTests(forFile: arguments[1]));
+        if (args['file'] != null) {
+          targets.addAll(findTests(inFile: args['file']));
+        } else if (args['source'] != null) {
+          targets.addAll(findTests(inSource: args['source']));
+        }
         break;
     }
 
     stdout.writeln(jsonEncode(targets));
-  } catch (ex) {}
+  } catch (ex) {
+    print('ex $ex');
+  }
 }

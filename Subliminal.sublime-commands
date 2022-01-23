@@ -8,5 +8,6 @@
 	{ "caption": "Pub: Add a package", "command": "pub_add" },
 	{ "caption": "Pub: Get packages", "command": "pub_get" },
 	{ "caption": "Dart: Run", "command": "dart_run" },
+	{ "caption": "Dart: Run all tests", "command": "run_dart_tests" },
 	{ "caption": "Subliminal: Test", "command": "subliminal_test" }
 ]

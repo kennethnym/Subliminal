@@ -1,4 +1,5 @@
-from typing import Union
+import re
+
 import sublime
 
 
@@ -24,7 +25,7 @@ _OUTPUT_PANEL_SETTINGS = {
     "show_definitions": False,
     "tab_size": 4,
     "translate_tabs_to_spaces": False,
-    "word_wrap": False
+    "word_wrap": False,
 }
 
 
@@ -39,9 +40,7 @@ def create_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANEL
 
 
 def show_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANEL_NAME):
-    window.run_command(
-        "show_panel", {"panel": f"output.{name}"}
-    )
+    window.run_command("show_panel", {"panel": f"output.{name}"})
 
 
 def destroy_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANEL_NAME):
@@ -50,7 +49,7 @@ def destroy_output_panel(window: sublime.Window, name: str = _PLUGIN_OUTPUT_PANE
 
 def append_to_output_panel(panel: sublime.View, line: str):
     panel.set_read_only(False)
-    panel.run_command("append", {
-        "characters": line
-    })
+    panel.run_command(
+        "append", {"characters": re.sub(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]", "", line)}
+    )
     panel.set_read_only(True)
